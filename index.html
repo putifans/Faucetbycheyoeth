@@ -3,18 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Faucet ETH - Reclama cada 15 segundos</title>
+    <title>CheyoFaucet - Claim ETH</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             max-width: 500px;
             margin: 50px auto;
             text-align: center;
+            padding: 20px;
         }
         input, button {
             padding: 10px;
             font-size: 16px;
             margin: 5px;
+            width: 80%;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
         }
         #message {
             margin-top: 20px;
@@ -22,19 +34,53 @@
         }
         .success { color: green; }
         .error { color: red; }
+        .info { color: blue; }
+        .cooldown { color: orange; }
     </style>
 </head>
 <body>
-    <h1>Faucet de ETH</h1>
+    <h1>💰 Faucet de ETH</h1>
     <p>Reclama <strong>0.00000004 ETH</strong> cada <strong>15 segundos</strong> directamente a tu cuenta de FaucetPay.</p>
-    <input type="text" id="username" placeholder="Tu nombre de usuario en FaucetPay" required>
-    <button id="claimBtn">Reclamar</button>
+    <input type="text" id="username" placeholder="Tu nombre de usuario en FaucetPay" autocomplete="off">
+    <br>
+    <button id="claimBtn">Reclamar ahora</button>
     <div id="message"></div>
 
     <script>
         const claimBtn = document.getElementById('claimBtn');
         const usernameInput = document.getElementById('username');
         const messageDiv = document.getElementById('message');
+
+        let cooldownTimer = null;
+
+        function showMessage(msg, type) {
+            messageDiv.innerHTML = msg;
+            messageDiv.className = type;
+            // Limpiar mensaje después de 5 segundos
+            setTimeout(() => {
+                if (messageDiv.innerHTML === msg) {
+                    messageDiv.innerHTML = '';
+                    messageDiv.className = '';
+                }
+            }, 5000);
+        }
+
+        function startCooldown(seconds) {
+            if (cooldownTimer) clearInterval(cooldownTimer);
+            let remaining = seconds;
+            claimBtn.disabled = true;
+            claimBtn.textContent = `Espera ${remaining}s`;
+            cooldownTimer = setInterval(() => {
+                remaining--;
+                if (remaining <= 0) {
+                    clearInterval(cooldownTimer);
+                    claimBtn.disabled = false;
+                    claimBtn.textContent = 'Reclamar ahora';
+                } else {
+                    claimBtn.textContent = `Espera ${remaining}s`;
+                }
+            }, 1000);
+        }
 
         claimBtn.addEventListener('click', async () => {
             const username = usernameInput.value.trim();
@@ -44,7 +90,7 @@
             }
 
             claimBtn.disabled = true;
-            messageDiv.innerHTML = 'Procesando...';
+            claimBtn.textContent = 'Procesando...';
 
             try {
                 const response = await fetch('/claim', {
@@ -52,28 +98,31 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username })
                 });
+
                 const data = await response.json();
 
                 if (data.success) {
                     showMessage(data.message, 'success');
+                    // Iniciar cooldown de 15 segundos
+                    startCooldown(15);
                 } else {
                     showMessage(data.message, 'error');
+                    // Si es error por cooldown, activamos temporizador
+                    if (response.status === 429 && data.message.includes('esperar')) {
+                        const match = data.message.match(/(\d+)/);
+                        if (match) startCooldown(parseInt(match[1]));
+                    } else {
+                        claimBtn.disabled = false;
+                        claimBtn.textContent = 'Reclamar ahora';
+                    }
                 }
             } catch (error) {
+                console.error('Error en fetch:', error);
                 showMessage('Error de conexión. Intenta de nuevo.', 'error');
-            } finally {
                 claimBtn.disabled = false;
+                claimBtn.textContent = 'Reclamar ahora';
             }
         });
-
-        function showMessage(msg, type) {
-            messageDiv.innerHTML = msg;
-            messageDiv.className = type;
-            setTimeout(() => {
-                messageDiv.innerHTML = '';
-                messageDiv.className = '';
-            }, 5000);
-        }
     </script>
 </body>
 </html>
