@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faucet ETH - Reclama cada 15 segundos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 500px;
+            margin: 50px auto;
+            text-align: center;
+        }
+        input, button {
+            padding: 10px;
+            font-size: 16px;
+            margin: 5px;
+        }
+        #message {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>Faucet de ETH</h1>
+    <p>Reclama <strong>0.00000004 ETH</strong> cada <strong>15 segundos</strong> directamente a tu cuenta de FaucetPay.</p>
+    <input type="text" id="username" placeholder="Tu nombre de usuario en FaucetPay" required>
+    <button id="claimBtn">Reclamar</button>
+    <div id="message"></div>
+
+    <script>
+        const claimBtn = document.getElementById('claimBtn');
+        const usernameInput = document.getElementById('username');
+        const messageDiv = document.getElementById('message');
+
+        claimBtn.addEventListener('click', async () => {
+            const username = usernameInput.value.trim();
+            if (!username) {
+                showMessage('Por favor, ingresa tu nombre de usuario de FaucetPay.', 'error');
+                return;
+            }
+
+            claimBtn.disabled = true;
+            messageDiv.innerHTML = 'Procesando...';
+
+            try {
+                const response = await fetch('/claim', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessage(data.message, 'success');
+                } else {
+                    showMessage(data.message, 'error');
+                }
+            } catch (error) {
+                showMessage('Error de conexión. Intenta de nuevo.', 'error');
+            } finally {
+                claimBtn.disabled = false;
+            }
+        });
+
+        function showMessage(msg, type) {
+            messageDiv.innerHTML = msg;
+            messageDiv.className = type;
+            setTimeout(() => {
+                messageDiv.innerHTML = '';
+                messageDiv.className = '';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
