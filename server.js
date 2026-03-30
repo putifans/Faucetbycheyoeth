@@ -21,6 +21,13 @@ const AMOUNT = 0.00000004; // ETH
 const CURRENCY = 'ETH';
 const COOLDOWN_SECONDS = 15;
 
+// ✅ VALIDACIÓN DE LA API KEY
+if (!FAUCETPAY_API_KEY) {
+  console.error('❌ ERROR: No se encontró FAUCETPAY_API_KEY en el archivo .env');
+  process.exit(1);
+}
+console.log('✅ API Key cargada correctamente');
+
 // Función para obtener la IP real del cliente
 const getClientIp = (req) => {
   return req.headers['x-forwarded-for'] || req.socket.remoteAddress;
