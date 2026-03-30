@@ -1,7 +1,7 @@
 {
-  "name": "faucet-eth",
+  "name": "eth-faucet",
   "version": "1.0.0",
-  "description": "ETH Faucet con FaucetPay",
+  "description": "ETH Faucet that sends 0.00000004 ETH every 15 seconds via FaucetPay",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
